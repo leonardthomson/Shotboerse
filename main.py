@@ -19,24 +19,30 @@ from myWidget import Ui_MainWindow
 # TODO: Öffne die Nachfrage schön! InputWidget anpassen!
 # TODO: Evtl Fehlerbehandlung
 
-shot_names = ["Mexikaner", "Gimlet", 'Berentzen']#, "Joster", "Pfeffi", "Tequila"]
-str_shot_names = ""
-for shot_name in shot_names[:-1]:
-    str_shot_names += shot_name + ", "
-str_shot_names += shot_names[-1]
+# Constant 
+ALL_SHOTS = ["Mexikaner", "Gimlet", "Blueshot",
+             "BlowJob", "Fishshot", "Tequila",
+             "Vodka", "Berentzen", "Joster", "Pfeffi"]
+ALL_COLORS = [(103, 19, 16), (108, 103, 97), (60, 182, 204),
+              (167, 136, 91), (212, 67, 49), (225, 185, 68),
+              (250, 250, 250), (161, 189, 68), (106, 54, 58), (0, 250, 5)]# BJ 100, 57, 28
+ALL_DIC = dict(zip(ALL_SHOTS, ALL_COLORS))
 
+# Current Shot selection
+shot_names = ALL_SHOTS#["Fishshot", "Tequila", "Vodka", "Berentzen", "Joster", "Pfeffi"]#["Mexikaner", "Gimlet", 'Berentzen']#, "Joster", "Pfeffi", "Tequila"]
+assert all(names in ALL_SHOTS for names in shot_names), f"Unrecognized Shot! Allowed shots are:\n{ALL_SHOTS}"
+shot_dic = {names:ALL_DIC[names] for names in shot_names}
+pen_colors = shot_dic.values()
+assert len(pen_colors) == len(shot_names), "We need as much pen colors as shot-names!"
+
+# Inits
 val_priceIncrease = 4
 avg = 100
 minPrice = 30
 is_cheap_value = 60
 is_already_cheap = [0 for i in range(len(shot_names))]
-
 n_xValues = 30
-
 engine = pyttsx3.init()
-
-pen_colors = [(250, 0, 0), (0,0,255), (255, 0, 255)]#, (0,255,0)]#,  (255, 215, 0) ]
-assert len(pen_colors) == len(shot_names), "We need as much pen colors as shot-names!"
 
 
 class MyMainWindow(QMainWindow):
@@ -77,9 +83,11 @@ class MyMainWindow(QMainWindow):
         self.shotsBoughtString = self.ui.lineEdit.text()
         self.shotsBoughtString = self.shotsBoughtString.replace(" ", "")
         self.ui.lineEdit.setText("")
-        print(self.shotsBoughtString)
+        #print(self.shotsBoughtString)
         if self.shotsBoughtString == "random":
             self.random_walk()
+        elif self.shotsBoughtString == "longrandom":
+            self.random_walk(nWalks=15)
         elif self.shotsBoughtString == "reset":
             self.reset()
         elif len(self.shotsBoughtString) == self.n_Shots:
@@ -153,6 +161,8 @@ class MyMainWindow(QMainWindow):
         self.update_plot_data()
 
     def praise_shots(self, idx):
+        print('cheappppp')
+        return
         shot_name = shot_names[idx]
         price = self.price[idx]
         n_praises = 3
@@ -172,4 +182,4 @@ if __name__ == "__main__":
     app = QApplication(sys.argv)
     window = MyMainWindow()
     window.showMaximized()
-    sys.exit(app.exec_())
+    sys.exit(app.exec())
