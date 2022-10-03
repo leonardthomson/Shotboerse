@@ -1,17 +1,18 @@
-from PySide6.QtWidgets import QApplication, QMainWindow, QInputDialog, QLineEdit, QLabel, QVBoxLayout
-from PySide6 import QtWidgets
-from PySide6 import *
-from PySide6.QtCore import QTimer
-from PySide6.QtCore import Qt
-
+# imports
+## general
 import pyqtgraph as pg
 import sys
 from random import randint
 import time
-
+import numpy as np
 import pyttsx3
-
-
+## PySide
+from PySide6.QtWidgets import \
+    QApplication, QMainWindow, QInputDialog, QLineEdit, QLabel, QVBoxLayout
+from PySide6 import QtWidgets
+from PySide6 import *
+from PySide6.QtCore import QTimer, Qt
+## own
 from myWidget import Ui_MainWindow
 
 # TODO: Schreibe aktuelle Preise ans Ende des Graphs
@@ -19,7 +20,7 @@ from myWidget import Ui_MainWindow
 # TODO: Öffne die Nachfrage schön! InputWidget anpassen!
 # TODO: Evtl Fehlerbehandlung
 
-# Constant 
+# Constant
 ALL_SHOTS = ["Mexikaner", "Gimlet", "Blueshot",
              "BlowJob", "Fishshot", "Tequila",
              "Vodka", "Berentzen", "Joster", "Pfeffi"]
@@ -29,18 +30,17 @@ ALL_COLORS = [(103, 19, 16), (108, 103, 97), (60, 182, 204),
 ALL_DIC = dict(zip(ALL_SHOTS, ALL_COLORS))
 
 # Current Shot selection
-shot_names = ALL_SHOTS#["Fishshot", "Tequila", "Vodka", "Berentzen", "Joster", "Pfeffi"]#["Mexikaner", "Gimlet", 'Berentzen']#, "Joster", "Pfeffi", "Tequila"]
-assert all(names in ALL_SHOTS for names in shot_names), f"Unrecognized Shot! Allowed shots are:\n{ALL_SHOTS}"
-shot_dic = {names:ALL_DIC[names] for names in shot_names}
-pen_colors = shot_dic.values()
-assert len(pen_colors) == len(shot_names), "We need as much pen colors as shot-names!"
+shot_selection = ["Mexikaner", "Gimlet", "Fishshot", "Tequila", "Vodka"] #ALL_SHOTS
+assert all(names in ALL_SHOTS for names in shot_selection),\
+    f"Unrecognized Shot! Allowed shots are:\n{ALL_SHOTS}"
+shot_dic = {names:pg.mkPen(width=4, color=ALL_DIC[names]) for names in shot_selection}
 
 # Inits
 val_priceIncrease = 4
 avg = 100
 minPrice = 30
 is_cheap_value = 60
-is_already_cheap = [0 for i in range(len(shot_names))]
+is_already_cheap = [0 for i in range(len(shot_dic))]
 n_xValues = 30
 engine = pyttsx3.init()
 
@@ -48,12 +48,15 @@ engine = pyttsx3.init()
 class MyMainWindow(QMainWindow):
     def __init__(self, parent=None):
         QMainWindow.__init__(self)
+        self.shot_dic = shot_dic
+        self.n_Shots = len(self.shot_dic)
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
         self.setUpGraph()
         self.shotsBoughtString = " "
         self.ui.lineEdit.returnPressed.connect(self.use_LE_input)
         self.show()
+        
 
 
 
@@ -64,18 +67,19 @@ class MyMainWindow(QMainWindow):
         #self.ui.graphicsView.setLabel('left', "Preis in Cent", **styles)
         # self.setWindowTitle("STONKS!")
 
-        # INITIALIZE THE GRAPHS
-        self.n_Shots = len(shot_names)
-        pens = [pg.mkPen(width=3, color=pen_color) for pen_color in pen_colors]
-        self.x = list(range(n_xValues))  # 100 time points
-        self.y = [randint(0,2*avg) for _ in range(n_xValues)] # 100 data points
-        self.y_data = [[100 for _ in range(n_xValues)] for _ in shot_names]
-        self.data_lines = [self.ui.graphicsView.plot(self.x, y_data, pen=pen, name=shot_name, symbol='o', symbolSize=10) for y_data, pen, shot_name in zip(self.y_data, pens, shot_names)]
-
-        self.price = [100 for _ in shot_names]
-        self.shots_bought = [0 for _ in shot_names]
+        # INITIALIZE THE GRAPHS with 100 points
+        self.x = np.arange(n_xValues)
+        self.y = np.random.rand(n_xValues) * 2 * avg
+        self.y_data = np.full(shape=(self.n_Shots, n_xValues), fill_value=100)
+        self.data_lines = [
+            self.ui.graphicsView.plot(
+                self.x, y_data,pen=self.shot_dic[name],
+                name=name, symbol='o', symbolSize=10) 
+            for y_data, name in zip(self.y_data, self.shot_dic)]
+        self.price = np.full(shape=self.n_Shots, fill_value=100)
+        self.shots_bought = np.zeros(shape=self.n_Shots)
         self.set_prices()
-        self.print_price()
+        self.print_price()  
 
         # DO THE UPDATE-FUNCTION
 
@@ -90,6 +94,10 @@ class MyMainWindow(QMainWindow):
             self.random_walk(nWalks=15)
         elif self.shotsBoughtString == "reset":
             self.reset()
+        elif self.shotsBoughtString == "clear":
+            self.y_data = np.full(shape=(self.n_Shots, n_xValues), fill_value=100)
+            self.x = np.arange(n_xValues)
+            self.reset()
         elif len(self.shotsBoughtString) == self.n_Shots:
             self.update_shotsBought()
             self.print_price()
@@ -100,9 +108,10 @@ class MyMainWindow(QMainWindow):
             self.ui.pay.setText("Schu bsuffe? \nGib die richtige Anzahl an Shots ein!")
 
     def print_price(self):
-        val = sum([nShot*price for nShot, price in zip(self.shots_bought, [y_data[-1] for y_data in self.y_data])])
+        val = sum([nShot*price for nShot, price in zip(
+            self.shots_bought, [y_data[-1] for y_data in self.y_data])])
         string = "Gekauft: \n"
-        for nShot, shot_name in zip(self.shots_bought, shot_names):
+        for nShot, shot_name in zip(self.shots_bought, self.shot_dic.keys()):
             if nShot == 0:
                 pass
             elif nShot >= 1:
@@ -115,7 +124,7 @@ class MyMainWindow(QMainWindow):
 
     def set_prices(self):
         self.ui.priceList.clear()
-        self.ui.priceList.addItems([shot_name+": "+str(round(price)/100) +"€" for shot_name, price in zip(shot_names, self.price)])
+        self.ui.priceList.addItems([shot_name+": "+str(round(price)/100) +"€" for shot_name, price in zip(self.shot_dic.keys(), self.price)])
         for idx in range(self.n_Shots):
             if self.price[idx] < is_cheap_value and not is_already_cheap[idx]:
                 self.praise_shots(idx)
@@ -124,10 +133,10 @@ class MyMainWindow(QMainWindow):
                 is_already_cheap[idx] = 0
 
     def update_plot_data(self):
-        self.x = self.x[1:] + [self.x[-1]+1]
-        for idx, data_line in enumerate(self.data_lines):
-            self.y_data[idx][:] = self.y_data[idx][1:] + [self.price[idx]]  # Add a new random value.
-            data_line.setData(self.x, self.y_data[idx][:])  # Update the data.
+        self.x += 1
+        self.y_data[:,:-1] = self.y_data[:,1:]
+        self.y_data[:,-1] = self.price  # Add a new random value.
+        [data_line.setData(self.x, self.y_data[idx][:]) for idx, data_line in enumerate(self.data_lines)] # Update the data.
 
     def update_shotsBought(self):
         self.shots_bought = [int(val) for val in self.shotsBoughtString]
@@ -163,7 +172,7 @@ class MyMainWindow(QMainWindow):
     def praise_shots(self, idx):
         print('cheappppp')
         return
-        shot_name = shot_names[idx]
+        shot_name = self.shot_dic.keys()[idx]
         price = self.price[idx]
         n_praises = 3
         random_idx = randint(0, n_praises-1)
