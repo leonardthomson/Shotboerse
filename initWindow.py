@@ -1,3 +1,13 @@
+# -*- coding: utf-8 -*-
+
+################################################################################
+## Form generated from reading UI file 'initWindow.ui'
+##
+## Created by: Qt User Interface Compiler version 6.3.2
+##
+## WARNING! All changes made in this file will be lost when recompiling UI file!
+################################################################################
+
 from PySide6.QtCore import (QCoreApplication, QDate, QDateTime, QLocale,
     QMetaObject, QObject, QPoint, QRect,
     QSize, QTime, QUrl, Qt)
@@ -6,10 +16,11 @@ from PySide6.QtGui import (QBrush, QColor, QConicalGradient, QCursor,
     QImage, QKeySequence, QLinearGradient, QPainter,
     QPalette, QPixmap, QRadialGradient, QTransform)
 from PySide6.QtWidgets import (QAbstractButton, QApplication, QCheckBox, QDialog,
-    QDialogButtonBox, QGridLayout, QGroupBox, QSizePolicy,
-    QVBoxLayout, QWidget)
+    QDialogButtonBox, QGridLayout, QGroupBox, QHBoxLayout,
+    QLabel, QSizePolicy, QToolButton, QVBoxLayout,
+    QWidget)
 
-class Ui_Dialog(QDialog):
+class Ui_Dialog(object):
     def setupUi(self, Dialog):
         if not Dialog.objectName():
             Dialog.setObjectName(u"Dialog")
@@ -71,13 +82,26 @@ class Ui_Dialog(QDialog):
 
         self.settings = QGroupBox(Dialog)
         self.settings.setObjectName(u"settings")
-        self.settings.setMaximumSize(QSize(16777215, 60))
-        self.verticalLayout = QVBoxLayout(self.settings)
-        self.verticalLayout.setObjectName(u"verticalLayout")
-        self.log = QCheckBox(self.settings)
-        self.log.setObjectName(u"log")
+        self.settings.setMaximumSize(QSize(16777215, 65))
+        self.horizontalLayout = QHBoxLayout(self.settings)
+        self.horizontalLayout.setObjectName(u"horizontalLayout")
+        self.label = QLabel(self.settings)
+        self.label.setObjectName(u"label")
+        self.label.setMaximumSize(QSize(100, 16777215))
 
-        self.verticalLayout.addWidget(self.log)
+        self.horizontalLayout.addWidget(self.label)
+
+        self.logfile = QLabel(self.settings)
+        self.logfile.setObjectName(u"logfile")
+        self.logfile.setLineWidth(0)
+        self.logfile.setAlignment(Qt.AlignRight|Qt.AlignTrailing|Qt.AlignVCenter)
+
+        self.horizontalLayout.addWidget(self.logfile)
+
+        self.toolButtonLogFile = QToolButton(self.settings)
+        self.toolButtonLogFile.setObjectName(u"toolButtonLogFile")
+
+        self.horizontalLayout.addWidget(self.toolButtonLogFile)
 
 
         self.verticalLayout_2.addWidget(self.settings)
@@ -95,6 +119,7 @@ class Ui_Dialog(QDialog):
         self.dialogButtonBox.rejected.connect(Dialog.reject)
 
         QMetaObject.connectSlotsByName(Dialog)
+    # setupUi
 
     def retranslateUi(self, Dialog):
         Dialog.setWindowTitle(QCoreApplication.translate("Dialog", u"Start shot-stock", None))
@@ -109,12 +134,8 @@ class Ui_Dialog(QDialog):
         self.pfe.setText(QCoreApplication.translate("Dialog", u"Pfeffi", None))
         self.jos.setText(QCoreApplication.translate("Dialog", u"Joster", None))
         self.settings.setTitle(QCoreApplication.translate("Dialog", u"Settings:", None))
-        self.log.setText(QCoreApplication.translate("Dialog", u"Log sells", None))
-
-    def extract_checks(self):
-        ls = [self.mex.isChecked(), self.gim.isChecked(), self.blu.isChecked(),
-              self.fis.isChecked(), self.teq.isChecked(), self.vod.isChecked(),
-              self.ber.isChecked(), self.jos.isChecked(), self.pfe.isChecked()]
-        return ls, self.log.isChecked() 
-
+        self.label.setText(QCoreApplication.translate("Dialog", u"Load log file:", None))
+        self.logfile.setText("")
+        self.toolButtonLogFile.setText(QCoreApplication.translate("Dialog", u"...", None))
+    # retranslateUi
 

@@ -1,12 +1,14 @@
 # imports
 ## general
+import json
+from logging import raiseExceptions
 import pyqtgraph as pg
 import sys
 from random import randint
 import numpy as np
 import pyttsx3
 ## PySide
-from PySide6.QtWidgets import QDialogButtonBox, QPushButton, QApplication, QMainWindow, QDialog, QInputDialog, QVBoxLayout, QGroupBox, QGridLayout, QCheckBox
+from PySide6.QtWidgets import QDialogButtonBox, QPushButton, QApplication, QMainWindow, QDialog, QInputDialog, QVBoxLayout, QGroupBox, QGridLayout, QCheckBox, QFileDialog
 from PySide6.QtCore import QSize, Qt, QCoreApplication
 from PySide6 import *
 ## own
@@ -42,6 +44,30 @@ is_already_cheap = [0 for i in range(len(shot_dic))]
 n_x_values = 30
 engine = pyttsx3.init()
 
+f = lambda x: "\t".join((map(str,x)))
+
+class MyDialog(Ui_Dialog):
+    def setupUi(self, Dialog):
+        super().setupUi(Dialog)
+        self.log_file = None
+        self.toolButtonLogFile.clicked.connect(self.set_log_file)
+    
+    
+    def extract_checks(self):
+        ls = [self.mex.isChecked(), self.gim.isChecked(), self.blu.isChecked(),
+                self.fis.isChecked(), self.teq.isChecked(), self.vod.isChecked(),
+                self.ber.isChecked(), self.jos.isChecked(), self.pfe.isChecked()]
+        return ls, self.log_file
+
+    def set_log_file(self):
+        """
+        Gets path for logfile for party.
+        """
+        #fileName = QFileDialog.getOpenFileName(d, "Open File", "/home", "TextFiles (*.txt)")
+        fileName, filter = QFileDialog.getOpenFileName(parent=None, caption='Open file', dir='.', filter='*.json')
+        self.logfile.setText("..." + fileName[-40:])
+        self.log_file = fileName
+
 
 class MyMainWindow(QMainWindow):
     """
@@ -49,10 +75,12 @@ class MyMainWindow(QMainWindow):
     """
     def __init__(self, parent=None):
         QMainWindow.__init__(self)
-        self.log = False
+        self.log_bool = False
+        self.log_file_path = None
         self.n_shots = None
         self.shot_names = []
         self.shot_dic = dict()
+        self.count_dic = dict()
         self.ui = Ui_MainWindow()
         self.init_dialog()
         self.ui.setupUi(self)
@@ -61,21 +89,38 @@ class MyMainWindow(QMainWindow):
         self.shots_bought_string = " "
         self.is_already_cheap = [0] * self.n_shots
         self.ui.lineEdit.returnPressed.connect(self.use_le_input)
+        #if self.log_bool:
+        #    self.load_log_file()
 
     def init_dialog(self):
         d = QDialog()
-        per_diag = Ui_Dialog()
+        per_diag = MyDialog()
         per_diag.setupUi(d)
         if not d.exec():
             sys.exit(1)
-        ls, log = per_diag.extract_checks()
-        self.log = log
+        ls, log_file_path = per_diag.extract_checks()
+        if log_file_path:
+            self.log_bool = True
+        self.log_file_path = log_file_path
         self.update_shot_names(ls)
         
+    def load_log_file(self):
+        pass
+        #self.log_file = open(self.log_file_path, mode='a+')
+        #shots = self.log_file.readline()
+        #if shots:
+        #    shot_list = shots.split("\t")
+        #    if not shot_list == self.shot_names:
+        #        raise Exception("Use a new log_file. The log_file uses different shots!")
+        #else:
+        #self.log_file.write("\t".join(self.shot_names))
+
     def update_shot_names(self, ls: list):
         self.shot_names = [name for i, name in enumerate(ALL_SHOTS) if ls[i]]
         self.n_shots = len(self.shot_names)
         self.shot_dic = {x:pg.mkPen(width=4, color=ALL_DIC[x]) for x in self.shot_names}
+        if self.log_bool:
+            self.count_shot = {x:0 for x in self.shot_names}
 
 
     def set_up_graph(self):
@@ -138,13 +183,16 @@ class MyMainWindow(QMainWindow):
             self.shots_bought, [y_data[-1] for y_data in self.y_data])])
         string = "Gekauft: \n"
         for nShot, shot_name in zip(self.shots_bought, self.shot_names):
+            if self.log_bool:
+                self.count_dic[shot_name] += nShot
             if nShot == 0:
                 pass
             elif nShot >= 1:
                 string += str(nShot) + " " + shot_name + "\n"
+        with open(self.log_file_path, "w") as outfile:
+            outfile.write(json.dumps(dictionary, indent=4))
         val = round(val/10)/10
         string += "\nPreis: " + str(val) + "0€."
-
         self.ui.pay.setText(string)
         return val*100
 
@@ -177,6 +225,8 @@ class MyMainWindow(QMainWindow):
         Updates Attribute.
         """
         self.shots_bought = [int(val) for val in self.shots_bought_string]
+        if self.log_bool:
+            self.log_file.save(self.log_file_path)
 
     def update_price(self):
         """
@@ -221,7 +271,7 @@ class MyMainWindow(QMainWindow):
         """
         Funny message when shots are espacially cheap.
         """
-        return # Crashes??!
+        # return # Crashes??!
         shot_name = self.shot_names[idx]
         price = self.price[idx]
         n_praises = 3
