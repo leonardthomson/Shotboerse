@@ -1,4 +1,4 @@
-
+import random
 
 # Die Reihenfolge der Shots lautet:
 # Tequila, Vodka, Mexikaner, Gimlet
@@ -36,18 +36,28 @@ event_list = [
     ["Du findest auf dem Dachboden Deinen alten Bitcoin-Usb-Stick. Du erhältst 2 Optionen Deiner Wahl!", (0,0,0,0)],
 ]
 
+def print_events():
+    for event_idx in range(len(event_list)):
+        print(f"{event_idx}: \t {event_list[event_idx][0]}")
+
 def debug_event_list():
     n_shots = len(event_list[0][1])
     shot_price_sums = [0 for _ in range(n_shots)]
 
     for event_idx in range(len(event_list)):
-        print(f"{event_idx}: \t {event_list[event_idx][0]}")
         for shot_idx in range(n_shots):
             shot_price_sums[shot_idx] += event_list[event_idx][1][shot_idx]
 
-
     return shot_price_sums
 
+def one_event(idx=None):
+    if idx is None:
+        idx = random.randint(0, len(event_list))
+    return event_list[idx]
+
+def all_events():
+    return event_list
 
 if __name__ == "__main__":
+    print_events()
     print(f"Debug_sums: {debug_event_list()}")
