@@ -3,6 +3,7 @@
 import json
 from logging import raiseExceptions
 import pyqtgraph as pg
+
 import sys
 from random import randint
 import numpy as np
@@ -22,15 +23,15 @@ from initWindow import Ui_Dialog
 
 # Constant
 ALL_SHOTS = ["Mexikaner", "Gimlet", "Blueshot",
-             "Fishshot", "Tequila", "Vodka",
+             "Fishshot", "Tequila", "Vodka Brause",
              "Berentzen", "Joster", "Pfeffi"]
-ALL_COLORS = [(103, 19, 16), (108, 103, 97), (60, 182, 204),
-              (167, 136, 91), (212, 67, 49), (225, 185, 68),
-              (250, 250, 250), (161, 189, 68), (106, 54, 58), (0, 250, 5)]# BJ 100, 57, 28
+ALL_COLORS = [(189, 29, 23), (68, 250, 177), (60, 182, 204),
+              (212, 67, 49), (225, 185, 68), (250, 250, 250),
+              (161, 189, 68), (170, 54, 58), (0, 250, 5)]# BJ 100, 57, 28
 ALL_DIC = dict(zip(ALL_SHOTS, ALL_COLORS))
 
 # Current Shot selection
-shot_selection = ["Mexikaner", "Gimlet", "Fishshot", "Tequila", "Vodka"] #ALL_SHOTS
+shot_selection = ["Mexikaner", "Gimlet", "Fishshot", "Tequila", "Vodka Brause"] #ALL_SHOTS
 assert all(names in ALL_SHOTS for names in shot_selection),\
     f"Unrecognized Shot! Allowed shots are:\n{ALL_SHOTS}"
 shot_dic = {names:pg.mkPen(width=4, color=ALL_DIC[names]) for names in shot_selection}
@@ -41,8 +42,21 @@ avg = 100
 min_price = 30
 is_cheap_value = 60
 is_already_cheap = [0 for i in range(len(shot_dic))]
+# TODO DB: UPDATE NUMBER OF X-VALUES
 n_x_values = 30
-engine = pyttsx3.init()
+#engine = pyttsx3.init()
+
+### Speak
+class _TTS:
+
+    engine = None
+    rate = None
+    def __init__(self):
+        self.engine = pyttsx3.init()
+
+    def start(self,text_):
+        self.engine.say(text_)
+        self.engine.runAndWait()
 
 f = lambda x: "\t".join((map(str,x)))
 
@@ -87,10 +101,13 @@ class MyMainWindow(QMainWindow):
         self.show()
         self.set_up_graph()
         self.shots_bought_string = " "
-        self.is_already_cheap = [0] * self.n_shots
+        self.is_already_cheap = [0 for _ in range(self.n_shots)]
+
+        # TODO: INSERT POTENTIAL TIMER HERE
+        #self.timer = pg.QtCore.QTimer()
+        #self.timer.timeout.connect(self.use_le_input())
+
         self.ui.lineEdit.returnPressed.connect(self.use_le_input)
-        #if self.log_bool:
-        #    self.load_log_file()
 
     def init_dialog(self):
         d = QDialog()
@@ -103,24 +120,14 @@ class MyMainWindow(QMainWindow):
             self.log_bool = True
         self.log_file_path = log_file_path
         self.update_shot_names(ls)
-        
-    def load_log_file(self):
-        pass
-        #self.log_file = open(self.log_file_path, mode='a+')
-        #shots = self.log_file.readline()
-        #if shots:
-        #    shot_list = shots.split("\t")
-        #    if not shot_list == self.shot_names:
-        #        raise Exception("Use a new log_file. The log_file uses different shots!")
-        #else:
-        #self.log_file.write("\t".join(self.shot_names))
 
     def update_shot_names(self, ls: list):
         self.shot_names = [name for i, name in enumerate(ALL_SHOTS) if ls[i]]
         self.n_shots = len(self.shot_names)
-        self.shot_dic = {x:pg.mkPen(width=4, color=ALL_DIC[x]) for x in self.shot_names}
+        self.shot_dic = {x: pg.mkPen(width=4, color=ALL_DIC[x]) for x in self.shot_names}
         if self.log_bool:
-            self.count_shot = {x:0 for x in self.shot_names}
+            self.count_dic = {x:0 for x in self.shot_names}
+            self.count_dic["Umsatz"] = 0
 
 
     def set_up_graph(self):
@@ -163,6 +170,7 @@ class MyMainWindow(QMainWindow):
         elif self.shots_bought_string == "reset":
             self.reset()
         elif self.shots_bought_string == "clear":
+
             self.y_data = np.full(shape=(self.n_shots, n_x_values), fill_value=100)
             self.x = np.arange(n_x_values)
             self.reset()
@@ -189,11 +197,15 @@ class MyMainWindow(QMainWindow):
                 pass
             elif nShot >= 1:
                 string += str(nShot) + " " + shot_name + "\n"
-        with open(self.log_file_path, "w") as outfile:
-            outfile.write(json.dumps(dictionary, indent=4))
         val = round(val/10)/10
         string += "\nPreis: " + str(val) + "0€."
+        if self.log_bool:
+            self.count_dic["Umsatz"] += val
         self.ui.pay.setText(string)
+        
+        if self.log_bool:
+            with open(self.log_file_path, "w") as outfile:
+                outfile.write(json.dumps(self.count_dic, indent=4))
         return val*100
 
     def set_prices(self):
@@ -225,8 +237,6 @@ class MyMainWindow(QMainWindow):
         Updates Attribute.
         """
         self.shots_bought = [int(val) for val in self.shots_bought_string]
-        if self.log_bool:
-            self.log_file.save(self.log_file_path)
 
     def update_price(self):
         """
@@ -271,21 +281,29 @@ class MyMainWindow(QMainWindow):
         """
         Funny message when shots are espacially cheap.
         """
-        # return # Crashes??!
         shot_name = self.shot_names[idx]
         price = self.price[idx]
         n_praises = 3
         random_idx = randint(0, n_praises-1)
+        shout_out = ""
         if random_idx == 0:
-            engine.say(shot_name + " ist billig! Kauft " + shot_name)
-            engine.say(shot_name + " nur " + str(round(price)) + " Cent!")
+            shout_out = (
+                f"{shot_name} ist billig! Kauft {shot_name}"
+                f"{shot_name} nur {str(round(price))} Cent!"
+            )
         elif random_idx == 1:
-            engine.say("Kauft " + shot_name + "!")
-            engine.say("Er ist billig und willig!")
+            shout_out = (
+                f"Kauft {shot_name}!"
+                f"Er ist billig und willig!"
+            )
         elif random_idx == 2:
-            engine.say("Der "+shot_name+"-Markt bricht zusammen!")
-            engine.say("Kauft "+shot_name)
-        engine.runAndWait()
+            shout_out = (
+                f"Der {shot_name}-Markt bricht zusammen!"
+                f"Kauft {shot_name}"
+            )
+        engine = _TTS()
+        engine.start(shout_out)
+        del(engine)
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)

@@ -1,0 +1,54 @@
+Loggin muss laufen!
+- Anpassen der Zeit-Events
+
+Zeitaspekt:
+- Der Graph läuft einfach zeitlich (Add random noise)
+- Bildschirm hat eine Zeitspanne von n Minuten -> Anpassen von Zeitpunkten auf dem Bildschirm
+
+
+Optionen:
+- Für 0.1€ persönliches freezen des jetzigen Preises für n shots
+
+
+EVENTS
+Wann Event getriggert?
+- Alle gewissen Anzahl von Käufen, potentiell 8 - 3 + 5
+- Zuerst Kauf und dann wird Event gestartet
+
+>= 20 Events
+- Random Permutation von Events, am Ende neu starten und neu permutieren
+
+
+- Markt-Events:
+	- Deflation: Alles wird bspw. 10ct billiger
+	- Inflation: Alles wird bspw. 10ct teurer 
+	
+	- Die Gin-Lobby hat eine Tarifverhandlung gewonnen! Gin wird billiger!
+	- Corona-Ausgleich für Studierende! Mexi wird billiger!
+	- Soergel wird Bundeskanzler! Er subventioniert Gin!
+	- Man findet in Junkers Büro große Mengen Vodka-Brause, der Markt wird geflutet!	
+	- Huber kauft beträchtliche Mengen des Weltmarkts an Gin auf. Gin wird rar!
+	- Mexikanische Mauer wird gebaut! Tequila und Mexi werden teurer! Rest wird entsprechend billiger
+	- Putin fuckt ab. Vodka wird teurer.
+	- Der Alkohol-Konsum der Assistent:innen wirkt sich beträchtlich auf den Markt aus. Mexikaner wird teurer!
+	- Die Fachschaft empfängt eine großzügige Limetten-Spende. Gin wird billiger.
+	- Die Erstis sind frustriert über die Ana-Klausur. Vodka wird teurer.
+	- Wegen des Klimawandels wachsen jetzt Agaven am Kaiserstuhl! Tequila wird billiger!
+	- Genmanipulierte Tomaten bringen den Markt ins Wanken! Mexikaner wird billiger!
+
+
+	- Sozialverbände protestieren gegen die hohen Lebenserhaltungskosten! Es passiert nichts.
+	- Der Bundeskanzler ist in einen Finanzskandal verwickelt! Es passiert nichts.
+	- Der Studiengang wird reakkreditiert. Es passiert nichts.
+	- Die Vorlesungen werden evaluiert. Es passiert nichts.
+	- Der StuRa veröffentlich eine Pressemitteilung gegen Diskriminierung. Es passiert nichts.
+	- Die Fachschaftssitzung geht mal wieder 3 Stunden. Es passiert nichts.
+
+Einzelpersonen:
+	- Du kriegst eine nicht deklarierte Parteispende. Eine Gin-Option!
+	- Der mexikanische Präsident lädt Dich auf seine Jacht ein. Eine Mexikaner-Option!
+	- Beim Golfen lernst Du Gerhard Schröder kennen. Eine Vodka-Option!
+	- Du erhältst brisante Nachrichten über den mexikanischen Agrar-Minister. Um Dich zum Schweigen zu bringen, erhältst Du eine Tequila-Option!
+	- Du findest auf dem Dachboden Deinen alten Bitcoin-Usb-Stick. Du erhältst 2 Optionen Deiner Wahl!
+	
+	

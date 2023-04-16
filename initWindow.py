@@ -129,7 +129,7 @@ class Ui_Dialog(object):
         self.blu.setText(QCoreApplication.translate("Dialog", u"Blue shot", None))
         self.fis.setText(QCoreApplication.translate("Dialog", u"Fish shot", None))
         self.teq.setText(QCoreApplication.translate("Dialog", u"Tequila", None))
-        self.vod.setText(QCoreApplication.translate("Dialog", u"Vodka", None))
+        self.vod.setText(QCoreApplication.translate("Dialog", u"Vodka Brause", None))
         self.ber.setText(QCoreApplication.translate("Dialog", u"Berentzen", None))
         self.pfe.setText(QCoreApplication.translate("Dialog", u"Pfeffi", None))
         self.jos.setText(QCoreApplication.translate("Dialog", u"Joster", None))
