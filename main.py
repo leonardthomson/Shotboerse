@@ -3,20 +3,20 @@
 import glob
 import json
 from datetime import datetime
-from logging import raiseExceptions
+
 import pyqtgraph as pg
 import os
 
-import sys
 from random import randint
 import numpy as np
-import pyttsx3
 ## PySide
 from PySide6.QtWidgets import QDialogButtonBox, QPushButton, QApplication, QMainWindow, QDialog, QInputDialog, \
     QVBoxLayout, QGroupBox, QGridLayout, QCheckBox, QFileDialog, QLabel, QSizePolicy
 from PySide6.QtCore import QSize, Qt, QCoreApplication
 from PySide6.QtGui import QFont, QShortcut, QKeySequence
 from PySide6 import *
+
+import functions
 ## own
 from myWidget import Ui_MainWindow
 from initWindow import Ui_Dialog
@@ -67,25 +67,16 @@ avg = 100
 # Minimal price for shots. If it goes lower, we just choose min_price
 min_price = 50
 
-# From this point on we consider the shot to be cheap
-is_cheap_value = 50
+# From this point on we consider the shot to be cheap # CURRENTLY NOT USED
+is_cheap_value = min_price
 is_already_cheap = [0 for i in range(len(shot_dic))]
 
 # TODO DB: UPDATE NUMBER OF X-VALUES
-n_x_values = 1000
+n_x_values = 1500
 #engine = pyttsx3.init()
 
 
-### Speak
-class _TTS:
-    engine = None
-    rate = None
-    def __init__(self):
-        self.engine = pyttsx3.init()
 
-    def start(self,text_):
-        self.engine.say(text_)
-        self.engine.runAndWait()
 
 f = lambda x: "\t".join((map(str,x)))
 
@@ -162,7 +153,7 @@ class MyMainWindow(QMainWindow):
         self.output_label = QLabel("Output Window", self.output_window)
         self.output_label.setWordWrap(True)
         self.output_label.setAlignment(Qt.AlignCenter)
-        self.output_label.setFont(QFont("Arial", 50))
+        self.output_label.setFont(QFont("Arial", 40))
         self.output_label.setGeometry(300,200,300,300)
         self.output_label.setStyleSheet("color: red")
 
@@ -205,27 +196,25 @@ class MyMainWindow(QMainWindow):
 
     def save_y_data_as_file(self):
         # Use numpy to save the y_data and give a time_stamp
-        time_stamp = datetime.now().strftime("%Y-%m-%d_%H")
+        time_stamp = datetime.now().strftime("%Y-%m-%d_%H_%M")
         np.save(".\\time_stamps\y_data_"+str(time_stamp), self.y_data)
 
     def load_y_data(self, path):
-        if path:
-            # We load the newest y_data file in our current folder
-            # RIGHT NOW WE ONLY LOAD THE NEWEST ONE
-            files = glob.glob(r".\time_stamps\y_data_*.npy")
-            if len(files) == 0:
-                print("No y_data file found!")
-                return 0
-            files.sort(key=os.path.getmtime)
-            self.y_data = np.load(files[-1])
-            #self.update_price()
-            #self.update_shots_bought()
+        # We load the newest y_data file in our current folder
+        # RIGHT NOW WE ONLY LOAD THE NEWEST ONE
+        files = glob.glob(r".\time_stamps\y_data_*.npy")
+        if len(files) == 0:
+            print("No y_data file found!")
+            return 0
+        files.sort(key=os.path.getmtime)
+        self.y_data = np.load(files[-1])
+        print("Loaded y_data from file: ", files[-1])
 
     def set_up_graph(self):
         """
         Initializes the Graph with constanst entries.
         """
-        self.ui.graphicsView.addLegend()
+        self.ui.graphicsView.addLegend()# MAKE LEGEND BIGGER!
         self.ui.graphicsView.setLabel('left', "Price", units='.01€')
         # INITIALIZE THE GRAPHS with n_x_values points
         self.x = np.arange(n_x_values)
@@ -233,11 +222,13 @@ class MyMainWindow(QMainWindow):
             self.y_data = random_events.valid_random_walks(self.n_shots, n_x_values, avg, 2, epsilon=15)
         else:
             self.load_y_data(self.log_file_path)
+        self.price = self.y_data[:, -1]
 
         self.data_lines = [
             self.ui.graphicsView.plot(
                 self.x, y_data,pen=self.shot_dic[name],
-                name=name, symbol='o', linewidth=.5, symbolSize=2)
+                name=name, symbol='o',
+                linewidth=.5, symbolSize=0)
             for y_data, name in zip(self.y_data, self.shot_dic)]
         self.price = self.y_data[:,-1]#np.full(shape=self.n_shots, fill_value=100)
         self.shots_bought = np.zeros(shape=self.n_shots)
@@ -316,7 +307,7 @@ class MyMainWindow(QMainWindow):
             for shot_name, price in zip(self.shot_names, self.price)])
         for idx in range(self.n_shots):
             if self.price[idx] < is_cheap_value and not is_already_cheap[idx]:
-                self.praise_shots(idx)
+                functions.praise_shots(idx, shot_names=self.shot_names, price=self.price)
                 is_already_cheap[idx] = 1
             else:
                 is_already_cheap[idx] = 0
@@ -409,22 +400,6 @@ class MyMainWindow(QMainWindow):
         self.set_prices()
         #self.ui.pay.setText("Kleiner Randomwalk gefällig?")
 
-    def praise_shots(self, idx):
-        """
-        Funny message when shots are espacially cheap.
-        """
-        shot_name = self.shot_names[idx]
-        price = self.price[idx]
-        n_praises = 3
-        random_idx = randint(0, n_praises-1)
-
-        shoutouts = [(f"{shot_name} ist billig! Kauft {shot_name}", f"{shot_name} nur {str(round(price))} Cent!"),
-                     (f"Kauft {shot_name}!", f"Er ist billig und willig!"),
-                     (f"Der {shot_name}-Markt bricht zusammen!", f"Kauft {shot_name}!")]
-        shout_out = shoutouts[random_idx]
-        engine = _TTS()
-        engine.start(shout_out)
-        del(engine)
 
 
 

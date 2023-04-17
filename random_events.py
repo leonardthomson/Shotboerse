@@ -37,6 +37,10 @@ event_list = [
     ["Du findest auf dem Dachboden Deinen alten Bitcoin-Usb-Stick.\n Du erhältst 2 Optionen Deiner Wahl!", (0,0,0,0)],
 ]
 
+def buyable_events():
+    # TODO DB: Ein paar Kaufbare Events ausdenken
+    pass
+
 def print_events():
     for event_idx in range(len(event_list)):
         print(f"{event_idx}: \t {event_list[event_idx][0]}")
