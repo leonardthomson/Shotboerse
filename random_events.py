@@ -4,6 +4,10 @@ import numpy as np
 # Die Reihenfolge der Shots lautet:
 # Tequila, Vodka, Mexikaner, Gimlet
 
+special_events = [
+
+]
+
 event_list = [
     ["Deflation! Alles wird billiger!", (-10, -10, -10, -10)],
     ["Inflation: Alles wird teurer!", (10, 10, 10, 10)],
@@ -35,6 +39,9 @@ event_list = [
     ["Beim Golfen lernst Du Gerhard Schröder kennen.\n Eine Vodka-Option!", (0,0,0,0)],
     ["Du erhältst brisante Nachrichten über den mexikanischen Agrar-Minister.\n Um Dich zum Schweigen zu bringen, erhältst Du eine Tequila-Option!", (0,0,0,0)],
     ["Du findest auf dem Dachboden Deinen alten Bitcoin-Usb-Stick.\n Du erhältst 2 Optionen Deiner Wahl!", (0,0,0,0)],
+    ["Julius trinkt nen Shot. \n Sorry, Julius!", (0,0,0,0)],
+    ["Julius muss einen Sombrero aufziehen!", (0,0,0,0)],
+    ["Julius darf ggf. einen Sombrero ausziehen!", (0,0,0,0)]
 ]
 
 def buyable_events():

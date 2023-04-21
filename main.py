@@ -6,7 +6,7 @@ from datetime import datetime
 
 import pyqtgraph as pg
 import os
-
+import sys
 from random import randint
 import numpy as np
 ## PySide
@@ -33,12 +33,12 @@ ALL_SHOTS = ["Mexikaner", "Gimlet", "Blueshot",
              "Berentzen", "Joster", "Pfeffi"]
 ALL_COLORS = [(189, 29, 23), (68, 250, 177), (60, 182, 204),
               (212, 67, 49), (225, 185, 68), (250, 250, 250),
-              (161, 189, 68), (170, 54, 58), (0, 250, 5)]# BJ 100, 57, 28
+              (161, 189, 68), (170, 54, 58), (0, 250, 5)]  # BJ 100, 57, 28
 ALL_DIC = dict(zip(ALL_SHOTS, ALL_COLORS))
 
 # Current Shot selection
-shot_selection = ["Mexikaner", "Gimlet", "Tequila", "Vodka Brause"] #ALL_SHOTS
-assert all(names in ALL_SHOTS for names in shot_selection),\
+shot_selection = ["Mexikaner", "Gimlet", "Tequila", "Vodka Brause"]  # ALL_SHOTS
+assert all(names in ALL_SHOTS for names in shot_selection), \
     f"Unrecognized Shot! Allowed shots are:\n{ALL_SHOTS}"
 shot_dic = {names: pg.mkPen(width=4, color=ALL_DIC[names]) for names in shot_selection}
 
@@ -60,7 +60,6 @@ logging_minutes = 5
 # Buying a shot increases it's price by this size
 val_price_increase = 4
 
-
 # Price, from which the shots start
 avg = 100
 
@@ -73,43 +72,37 @@ is_already_cheap = [0 for i in range(len(shot_dic))]
 
 # TODO DB: UPDATE NUMBER OF X-VALUES
 n_x_values = 1500
-#engine = pyttsx3.init()
+# engine = pyttsx3.init()
 
 
+f = lambda x: "\t".join((map(str, x)))
 
-
-f = lambda x: "\t".join((map(str,x)))
 
 class MyDialog(Ui_Dialog):
     def setupUi(self, Dialog):
         super().setupUi(Dialog)
-        self.log_file = None
-        self.toolButtonLogFile.clicked.connect(self.set_log_file)
+        self.log_bool = False
+        self.toolButtonLogFile.clicked.connect(self.load_data)
+        # self.toolButtonLogFile.clicked.connect(self.set_log_file)
+
+    def load_data(self):
+        self.log_bool = True
 
     def extract_checks(self):
-        ls = [self.mex.isChecked(), self.gim.isChecked(), self.blu.isChecked(),
-                self.fis.isChecked(), self.teq.isChecked(), self.vod.isChecked(),
-                self.ber.isChecked(), self.jos.isChecked(), self.pfe.isChecked()]
-        return ls, self.log_file
-
-    def set_log_file(self):
-        """
-        Gets path for logfile for party.
-        """
-        #fileName = QFileDialog.getOpenFileName(d, "Open File", "/home", "TextFiles (*.txt)")
-        fileName, filter = QFileDialog.getOpenFileName(parent=None, caption='Open file', dir='.', filter='*.json')
-        self.logfile.setText("..." + fileName[-40:])
-        self.log_file = fileName
+        shot_list = [self.mex.isChecked(), self.gim.isChecked(), self.blu.isChecked(),
+                     self.fis.isChecked(), self.teq.isChecked(), self.vod.isChecked(),
+                     self.ber.isChecked(), self.jos.isChecked(), self.pfe.isChecked()]
+        return shot_list, self.log_bool
 
 
 class MyMainWindow(QMainWindow):
     """
     Implementing the functionality for the stock development.
     """
+
     def __init__(self, parent=None):
         QMainWindow.__init__(self)
         self.log_bool = False
-        self.log_file_path = None
         self.n_shots = None
         self.shot_names = []
         self.shot_dic = dict()
@@ -120,26 +113,26 @@ class MyMainWindow(QMainWindow):
         self.ui.setupUi(self)
         self.show()
         self.set_up_graph()
-
+        self.all_shots_bought = np.zeros((self.n_shots, 2))
 
         # Flag, whether the shot was already announced as being cheap
         self.is_already_cheap = [0 for _ in range(self.n_shots)]
 
         # TIMERS
         self.timer_seconds = pg.QtCore.QTimer()
-        self.timer_seconds.setInterval(update_time*1000)
+        self.timer_seconds.setInterval(update_time * 1000)
         self.timer_seconds.timeout.connect(self.noised_time_step)
         self.timer_seconds.start()
 
         self.timer_events = pg.QtCore.QTimer()
-        self.timer_events.setInterval(event_time*1000)
+        self.timer_events.setInterval(event_time * 1000)
         self.timer_events.timeout.connect(self.stock_event)
         self.timer_events.start()
 
         # Time until we save the y_data
         self.timer_logging = pg.QtCore.QTimer()
         self.timer_logging.setInterval(logging_minutes * 60 * 1000)
-        self.timer_logging.timeout.connect(self.save_y_data_as_file)
+        self.timer_logging.timeout.connect(self.save_all_data)
         self.timer_logging.start()
 
         self.all_events = random_events.get_events()
@@ -154,7 +147,7 @@ class MyMainWindow(QMainWindow):
         self.output_label.setWordWrap(True)
         self.output_label.setAlignment(Qt.AlignCenter)
         self.output_label.setFont(QFont("Arial", 40))
-        self.output_label.setGeometry(300,200,300,300)
+        self.output_label.setGeometry(300, 200, 300, 300)
         self.output_label.setStyleSheet("color: red")
 
         self.output_label.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
@@ -162,17 +155,10 @@ class MyMainWindow(QMainWindow):
         shortcut = QShortcut(QKeySequence(Qt.Key_P), self.output_window)
         shortcut.activated.connect(self.output_window.close)
 
-        #self.output_label.setSizePolicy(PySide6.QtWidgets.)
-        #self.output_window.set_title("EVENT OCCURED!")
+        # self.output_label.setSizePolicy(PySide6.QtWidgets.)
+        # self.output_window.set_title("EVENT OCCURED!")
 
         self.ui.lineEdit.returnPressed.connect(self.use_le_input)
-
-    def closeEvent(self, *args, **kwargs):
-        super(MyMainWindow, self).closeEvent(*args, **kwargs)
-        # Here we can simply save the y_data!
-        print("We saved the data!")
-        self.save_y_data_as_file()
-
 
     def init_dialog(self):
         d = QDialog()
@@ -180,26 +166,46 @@ class MyMainWindow(QMainWindow):
         per_diag.setupUi(d)
         if not d.exec():
             sys.exit(1)
-        ls, log_file_path = per_diag.extract_checks()
-        if log_file_path:
-            self.log_bool = True
-        self.log_file_path = log_file_path
-        self.update_shot_names(ls)
+        shot_list, self.log_bool = per_diag.extract_checks()
+        self.update_shot_names(shot_list)
+
+    def closeEvent(self, *args, **kwargs):
+        super(MyMainWindow, self).closeEvent(*args, **kwargs)
+        # Here we can simply save the y_data!
+        print("We saved the data!")
+        self.save_all_data()
+        self.save_all_shots_bought()
 
     def update_shot_names(self, ls: list):
         self.shot_names = [name for i, name in enumerate(ALL_SHOTS) if ls[i]]
         self.n_shots = len(self.shot_names)
         self.shot_dic = {x: pg.mkPen(width=4, color=ALL_DIC[x]) for x in self.shot_names}
         if self.log_bool:
-            self.count_dic = {x:0 for x in self.shot_names}
+            self.count_dic = {x: 0 for x in self.shot_names}
             self.count_dic["Umsatz"] = 0
 
-    def save_y_data_as_file(self):
+    def save_all_data(self):
         # Use numpy to save the y_data and give a time_stamp
         time_stamp = datetime.now().strftime("%Y-%m-%d_%H_%M")
-        np.save(".\\time_stamps\y_data_"+str(time_stamp), self.y_data)
+        np.save(".\\time_stamps\y_data_" + str(time_stamp), self.y_data)
 
-    def load_y_data(self, path):
+        # Also save the shots bought
+        self.save_all_shots_bought()
+
+    def save_all_shots_bought(self):
+        time_stamp = datetime.now().strftime("%Y-%m-%d_%H_%M")
+        np.save(".\\time_stamps\shots_bought_" + str(time_stamp), self.all_shots_bought)
+
+    def load_all_shots_bought(self):
+        files = glob.glob(r".\time_stamps\shots_bought_*.npy")
+        if len(files) == 0:
+            print("No shots_bought file found!")
+            return 0
+        files.sort(key=os.path.getmtime)
+        self.n_shots_bought = np.load(files[-1])
+        print("Loaded shots_bought from file: ", files[-1])
+
+    def load_y_data(self):
         # We load the newest y_data file in our current folder
         # RIGHT NOW WE ONLY LOAD THE NEWEST ONE
         files = glob.glob(r".\time_stamps\y_data_*.npy")
@@ -214,23 +220,23 @@ class MyMainWindow(QMainWindow):
         """
         Initializes the Graph with constanst entries.
         """
-        self.ui.graphicsView.addLegend()# MAKE LEGEND BIGGER!
+        self.ui.graphicsView.addLegend()  # MAKE LEGEND BIGGER!
         self.ui.graphicsView.setLabel('left', "Price", units='.01€')
         # INITIALIZE THE GRAPHS with n_x_values points
         self.x = np.arange(n_x_values)
         if not self.log_bool:
             self.y_data = random_events.valid_random_walks(self.n_shots, n_x_values, avg, 2, epsilon=15)
         else:
-            self.load_y_data(self.log_file_path)
+            self.load_y_data()
         self.price = self.y_data[:, -1]
 
         self.data_lines = [
             self.ui.graphicsView.plot(
-                self.x, y_data,pen=self.shot_dic[name],
+                self.x, y_data, pen=self.shot_dic[name],
                 name=name, symbol='o',
                 linewidth=.5, symbolSize=0)
             for y_data, name in zip(self.y_data, self.shot_dic)]
-        self.price = self.y_data[:,-1]#np.full(shape=self.n_shots, fill_value=100)
+        self.price = self.y_data[:, -1]  # np.full(shape=self.n_shots, fill_value=100)
         self.shots_bought = np.zeros(shape=self.n_shots)
         self.set_prices()
         self.print_price()
@@ -264,6 +270,8 @@ class MyMainWindow(QMainWindow):
             self.y_data = np.full(shape=(self.n_shots, n_x_values), fill_value=100)
             self.x = np.arange(n_x_values)
             self.reset()
+        elif self.shots_bought_string == "event":
+            self.stock_event()
         elif len(self.shots_bought_string) == self.n_shots:
             self.update_shots_bought()
             self.print_price()
@@ -277,8 +285,12 @@ class MyMainWindow(QMainWindow):
         """
         Updates list of prices.
         """
-        val = sum([nShot*price for nShot, price in zip(
-            self.shots_bought, [y_data[-1] for y_data in self.y_data])])
+        val = sum((cost_vector := [nShot * price for nShot, price in zip(
+            self.shots_bought, [y_data[-1] for y_data in self.y_data])]))
+
+        # We also logg the price we got
+        self.all_shots_bought[:, 1] += np.array(cost_vector)
+
         string = "Gekauft: \n"
         for nShot, shot_name in zip(self.shots_bought, self.shot_names):
             if self.log_bool:
@@ -287,24 +299,20 @@ class MyMainWindow(QMainWindow):
                 pass
             elif nShot >= 1:
                 string += str(nShot) + " " + shot_name + "\n"
-        val = round(val/10)/10
+        val = round(val / 10) / 10
         string += "\nPreis: " + str(val) + "0€."
-        if self.log_bool:
-            self.count_dic["Umsatz"] += val
+
         self.ui.pay.setText(string)
-        
-        if self.log_bool:
-            with open(self.log_file_path, "w") as outfile:
-                outfile.write(json.dumps(self.count_dic, indent=4))
-        return val*100
+
+        return val * 100
 
     def set_prices(self):
         """
         Calculate prices.
         """
         self.ui.priceList.clear()
-        self.ui.priceList.addItems([f"{shot_name}: {(price/100):.2f}€"
-            for shot_name, price in zip(self.shot_names, self.price)])
+        self.ui.priceList.addItems([f"{shot_name}: {(price / 100):.2f}€"
+                                    for shot_name, price in zip(self.shot_names, self.price)])
         for idx in range(self.n_shots):
             if self.price[idx] < is_cheap_value and not is_already_cheap[idx]:
                 functions.praise_shots(idx, shot_names=self.shot_names, price=self.price)
@@ -317,32 +325,34 @@ class MyMainWindow(QMainWindow):
         Update plots for new data points.
         """
         self.x += 1
-        self.y_data[:,:-1] = self.y_data[:,1:]
-        self.y_data[:,-1] = self.price  # Add the new price value
+        self.y_data[:, :-1] = self.y_data[:, 1:]
+        self.y_data[:, -1] = self.price  # Add the new price value
 
-        for idx, data_line in enumerate(self.data_lines):# Update the data.
+        for idx, data_line in enumerate(self.data_lines):  # Update the data.
             data_line.setData(self.x, self.y_data[idx][:])
+
     def update_shots_bought(self):
         """
         Updates Attribute.
         """
         self.shots_bought = [int(val) for val in self.shots_bought_string]
+        self.all_shots_bought[:, 0] += self.shots_bought
 
     def update_price(self):
         """
         Update lineEdit price.
         """
-        val1 = sum(self.shots_bought)/(self.n_shots-1)
-        val2 = (1+1/(self.n_shots-1))
+        val1 = sum(self.shots_bought) / (self.n_shots - 1)
+        val2 = (1 + 1 / (self.n_shots - 1))
 
-        self.price = [max(last_price + val_price_increase*(val2 * n_shots_bought - val1), min_price) \
-            for last_price, n_shots_bought in zip(self.y_data[:, -1], self.shots_bought)]
+        self.price = [max(last_price + val_price_increase * (val2 * n_shots_bought - val1), min_price) \
+                      for last_price, n_shots_bought in zip(self.y_data[:, -1], self.shots_bought)]
 
     def noised_time_step(self, noise=step_noise):
         """
         Simulates one time step.
         """
-        self.price = [max(self.price[idx] + noise*(np.random.rand()-0.5), min_price) for idx in range(self.n_shots)]
+        self.price = [max(self.price[idx] + noise * (np.random.rand() - 0.5), min_price) for idx in range(self.n_shots)]
         self.update_plot_data()
         self.set_prices()
         self.print_price()
@@ -353,9 +363,12 @@ class MyMainWindow(QMainWindow):
 
         """
         # Choose event
-        current_evt =self.all_events[self.event_idx]
+        current_evt = self.all_events[self.event_idx]
         event_text = current_evt[0]
         price_change = current_evt[1]
+        if len(current_evt) == 3:
+            special_event_function = current_evt[2]
+            special_event_function()
 
         self.output_label.setText(event_text)
         self.output_window.setStyleSheet("background-color: black")
@@ -376,8 +389,8 @@ class MyMainWindow(QMainWindow):
         self.print_price()
 
         # Set a new event-timing
-        self.timer_events.setInterval((event_time + np.random.randint(-event_time_variance, event_time_variance))* 1000)
-
+        self.timer_events.setInterval(
+            (event_time + np.random.randint(-event_time_variance, event_time_variance)) * 1000)
 
     def reset(self):
         """
@@ -398,10 +411,7 @@ class MyMainWindow(QMainWindow):
             self.update_price()
             self.update_plot_data()
         self.set_prices()
-        #self.ui.pay.setText("Kleiner Randomwalk gefällig?")
-
-
-
+        # self.ui.pay.setText("Kleiner Randomwalk gefällig?")
 
 
 if __name__ == "__main__":
