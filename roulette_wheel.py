@@ -1,15 +1,18 @@
 import math
 import random
 from tkinter import *
-from time import sleep
+from time import sleep, time
 
 import numpy as np
 class myWheel():
-    def __init__(self, shots, width=400, height=400):
+    def __init__(self, shots, colors=None, width=400, height=400):
         self.shots = shots
         self.width = width
         self.height = height
-        self.colors = ["red", "green", "blue", "yellow", "purple", "orange", "pink", "brown", "grey"][0:len(shots)]
+        if colors is None:
+            self.colors = ["red", "green", "blue", "yellow", "purple", "orange", "pink", "brown", "grey"][0:len(shots)]
+        else:
+            self.colors = colors
         self.angle_width = int(360/len(shots))
         self.wheel_angle = 0
         self.timing_step = 50
@@ -23,15 +26,18 @@ class myWheel():
         self.canvas.create_oval(100, 100, 300, 300, fill="white", outline="black")
 
         self.draw_wheel()
-        self.button = Button(self.main_window, text="Spin", command=self.set_up_spin)
-        self.button.place(x=150, y=100)
-        self.main_window.mainloop()
+        self.result = self.set_up_spin()
+
+
+        #self.button = Button(self.main_window, text="Spin", command=self.set_up_spin)
+        #self.button.place(x=150, y=100)
+        #self.main_window.mainloop()
 
 
     def draw_wheel(self, angle=0):
         self.starting_angle = angle * 360/100
         coord = 100, 100, 300, 300
-        self.edge_angles = [self.starting_angle + idx * self.angle_width for idx in range(len(self.shots))]
+        self.edge_angles = [(self.starting_angle + idx * self.angle_width) % 360 for idx in range(len(self.shots))]
 
         for idx in range(len(self.shots)):
             # draw the piece
@@ -65,8 +71,31 @@ class myWheel():
             sleep(0.05)
         self.wheel_angle = angles[-1]
         # highlight the winning piece
-        self.canvas.create_arc(100, 100, 300, 300, start=self.wheel_angle, extent=angles[0] - angles[-1],
-                                 fill="white", outline="white")
+        winning_angle = min([angle for angle in self.edge_angles if angle >= 45])
+        winning_idx = self.edge_angles.index(winning_angle)
+        if winning_angle > 45 and winning_angle <= 90:
+            self.canvas.create_arc(100, 100, 300, 300, start=winning_angle, extent=self.angle_width,
+                                 fill="white", outline="red")
+            mid_angle = winning_angle + self.angle_width/2
+        else:
+            self.canvas.create_arc(100, 100, 300, 300, start=winning_angle, extent=-self.angle_width,
+                                   fill="white", outline="red")
+            mid_angle = winning_angle - self.angle_width/2
+            winning_idx -= 1
+
+        midX = 200 + 100 * math.cos(mid_angle / 360 * 2 * np.pi) / 2
+        midY = 200 - 100 * math.sin(mid_angle / 360 * 2 * np.pi) / 2
+        # 3. put the text into the middle point
+        # change color of text to white
+        self.canvas.create_text(midX, midY, text=self.shots[winning_idx], fill="red", font="Times 10 bold")
+
+        self.main_window.update()
+        sleep(2)
+        # close the window
+        self.main_window.destroy()
+        return self.shots[winning_idx], winning_idx
+
+
 
     def spin_step(self, angle):
         # clear the canvas
@@ -78,6 +107,8 @@ class myWheel():
 def main():
     colV = ["Red", "Green", "Blue", "Yellow"]
     myWheel(colV)
+
+
 
 if __name__ == "__main__":
     main()

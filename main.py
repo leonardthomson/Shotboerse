@@ -2,6 +2,7 @@
 ## general
 import glob
 import json
+import time
 from datetime import datetime
 
 import pyqtgraph as pg
@@ -17,11 +18,13 @@ from PySide6.QtGui import QFont, QShortcut, QKeySequence
 from PySide6 import *
 
 import functions
+from roulette_wheel import myWheel
 ## own
 from myWidget import Ui_MainWindow
 from initWindow import Ui_Dialog
 
 import random_events
+from ctypes import windll
 
 # TODO DB: Maybe count, how often every shot was bought
 
@@ -50,7 +53,8 @@ update_time = 1
 step_noise = .7
 
 # Time, after which a stock event occurs (in seconds)
-event_time = 20
+event_time = 5
+output_window_show_time = 6
 # Events occure every event_time +- event_time_variance(in seconds)
 event_time_variance = 2
 
@@ -61,16 +65,17 @@ logging_minutes = 5
 val_price_increase = 4
 
 # Price, from which the shots start
-avg = 100
+avg = 110
 
 # Minimal price for shots. If it goes lower, we just choose min_price
-min_price = 50
+min_price = 70
 
 # From this point on we consider the shot to be cheap # CURRENTLY NOT USED
 is_cheap_value = min_price
-is_already_cheap = [0 for i in range(len(shot_dic))]
 
-# TODO DB: UPDATE NUMBER OF X-VALUES
+is_already_cheap = [0 for i in range(len(shot_dic))]
+n_cheap_before_praise_again = 5
+
 n_x_values = 1500
 # engine = pyttsx3.init()
 
@@ -100,8 +105,18 @@ class MyMainWindow(QMainWindow):
     Implementing the functionality for the stock development.
     """
 
+
+
     def __init__(self, parent=None):
+
         QMainWindow.__init__(self)
+        self.setWindowFlag(Qt.FramelessWindowHint)
+        self.setAttribute(Qt.WA_TranslucentBackground)
+        self.setContentsMargins(0, 0, 0, 0)
+        self.setWindowState(Qt.WindowMaximized)
+
+
+
         self.log_bool = False
         self.n_shots = None
         self.shot_names = []
@@ -109,11 +124,13 @@ class MyMainWindow(QMainWindow):
         self.count_dic = dict()
         self.shots_bought_string = " "
         self.ui = Ui_MainWindow()
+        # TODO: Fix the number of shots!
+        self.all_shots_bought = np.zeros((4, 2))
+
         self.init_dialog()
         self.ui.setupUi(self)
         self.show()
         self.set_up_graph()
-        self.all_shots_bought = np.zeros((self.n_shots, 2))
 
         # Flag, whether the shot was already announced as being cheap
         self.is_already_cheap = [0 for _ in range(self.n_shots)]
@@ -141,8 +158,7 @@ class MyMainWindow(QMainWindow):
 
         self.output_window = QDialog()
         self.output_window.setWindowFlags(Qt.CustomizeWindowHint | Qt.FramelessWindowHint)
-        self.output_window.setStyleSheet("background-color: black")
-        self.output_window.setStyleSheet("border: 2px solid red;")
+        self.output_window.setStyleSheet("border: 2px solid red; background: black")
         self.output_label = QLabel("Output Window", self.output_window)
         self.output_label.setWordWrap(True)
         self.output_label.setAlignment(Qt.AlignCenter)
@@ -159,6 +175,9 @@ class MyMainWindow(QMainWindow):
         # self.output_window.set_title("EVENT OCCURED!")
 
         self.ui.lineEdit.returnPressed.connect(self.use_le_input)
+
+
+
 
     def init_dialog(self):
         d = QDialog()
@@ -266,6 +285,26 @@ class MyMainWindow(QMainWindow):
             self.random_walk(nWalks=20)
         elif self.shots_bought_string == "reset":
             self.reset()
+        elif self.shots_bought_string.startswith("wheel"):
+            # TODO: SET UP COLORS THE SAME AS GRAPH
+            wheel = myWheel(shots=self.shot_names)
+            shot_idx = wheel.result[1]
+            n_shots = self.shots_bought_string[-1]
+            if not n_shots.isnumeric():
+                pass
+            else:
+                n_shots = int(n_shots)
+                self.shots_bought_string = '0' * self.n_shots
+                self.shots_bought_string = self.shots_bought_string[:shot_idx] + str(
+                    n_shots) + self.shots_bought_string[shot_idx + 1:]
+                self.update_shots_bought()
+
+            self.print_price()
+            self.update_price()
+            self.update_plot_data()
+            self.set_prices()
+
+
         elif self.shots_bought_string == "clear":
             self.y_data = np.full(shape=(self.n_shots, n_x_values), fill_value=100)
             self.x = np.arange(n_x_values)
@@ -314,9 +353,11 @@ class MyMainWindow(QMainWindow):
         self.ui.priceList.addItems([f"{shot_name}: {(price / 100):.2f}€"
                                     for shot_name, price in zip(self.shot_names, self.price)])
         for idx in range(self.n_shots):
-            if self.price[idx] < is_cheap_value and not is_already_cheap[idx]:
-                functions.praise_shots(idx, shot_names=self.shot_names, price=self.price)
-                is_already_cheap[idx] = 1
+            if self.price[idx] < is_cheap_value:
+                if is_already_cheap[idx] >= n_cheap_before_praise_again:
+                    functions.praise_shots(idx, shot_names=self.shot_names, price=self.price)
+                else:
+                    is_already_cheap[idx] += 1
             else:
                 is_already_cheap[idx] = 0
 
@@ -355,7 +396,7 @@ class MyMainWindow(QMainWindow):
         self.price = [max(self.price[idx] + noise * (np.random.rand() - 0.5), min_price) for idx in range(self.n_shots)]
         self.update_plot_data()
         self.set_prices()
-        self.print_price()
+        #self.print_price()
 
     def stock_event(self):
         """
@@ -371,10 +412,14 @@ class MyMainWindow(QMainWindow):
             special_event_function()
 
         self.output_label.setText(event_text)
-        self.output_window.setStyleSheet("background-color: black")
-        self.output_window.setStyleSheet("border: 2px solid red;")
         self.output_label.adjustSize()
+        #self.output_window.setStyleSheet("border: 2px solid red; background: black")
+
+        self.output_window.update()
         self.output_window.show()
+
+
+        pg.QtCore.QTimer.singleShot(output_window_show_time*1000, self.output_window.close)
 
         # Update event_idx
         self.event_idx += 1
@@ -418,5 +463,7 @@ if __name__ == "__main__":
     app = QApplication(sys.argv)
     window = MyMainWindow()
     window.setWindowFlags(Qt.CustomizeWindowHint | Qt.FramelessWindowHint)
+    screen_rect = app.primaryScreen().geometry()
+    window.setGeometry(screen_rect.left(), screen_rect.top(), screen_rect.width(), screen_rect.height())
     window.showMaximized()
     sys.exit(app.exec())
