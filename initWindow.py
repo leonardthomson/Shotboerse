@@ -32,13 +32,15 @@ class Ui_Dialog(object):
         self.select_shots.setObjectName(u"select_shots")
         self.gridLayout_2 = QGridLayout(self.select_shots)
         self.gridLayout_2.setObjectName(u"gridLayout_2")
-        self.mex = QCheckBox(self.select_shots)
+        self.mex = QCheckBox(self.select_shots, )
+        self.mex.setChecked(True)
         self.mex.setObjectName(u"mex")
 
         self.gridLayout_2.addWidget(self.mex, 0, 0, 1, 1)
 
         self.gim = QCheckBox(self.select_shots)
         self.gim.setObjectName(u"gim")
+        self.gim.setChecked(True)
 
         self.gridLayout_2.addWidget(self.gim, 0, 1, 1, 1)
 
@@ -54,11 +56,13 @@ class Ui_Dialog(object):
 
         self.teq = QCheckBox(self.select_shots)
         self.teq.setObjectName(u"teq")
+        self.teq.setChecked(True)
 
         self.gridLayout_2.addWidget(self.teq, 1, 1, 1, 1)
 
         self.vod = QCheckBox(self.select_shots)
         self.vod.setObjectName(u"vod")
+        self.vod.setChecked(True)
 
         self.gridLayout_2.addWidget(self.vod, 1, 2, 1, 1)
 

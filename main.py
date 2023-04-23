@@ -462,8 +462,8 @@ class MyMainWindow(QMainWindow):
 if __name__ == "__main__":
     app = QApplication(sys.argv)
     window = MyMainWindow()
-    window.setWindowFlags(Qt.CustomizeWindowHint | Qt.FramelessWindowHint)
-    screen_rect = app.primaryScreen().geometry()
-    window.setGeometry(screen_rect.left(), screen_rect.top(), screen_rect.width(), screen_rect.height())
+    # window.setWindowFlags(Qt.CustomizeWindowHint | Qt.FramelessWindowHint)
+    # screen_rect = app.primaryScreen().geometry()
+    # window.setGeometry(screen_rect.left(), screen_rect.top(), screen_rect.width(), screen_rect.height())
     window.showMaximized()
     sys.exit(app.exec())
