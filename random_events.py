@@ -29,7 +29,7 @@ event_list = [
     ["Ein kaputtes Schiff hat den Limetten Weltmarkt ins Wanken gebracht!\n Gin wird teurer!", (0,15,0,0)],
 
     ["Sozialverbände protestieren gegen die hohen Lebenserhaltungskosten!\n Es passiert nichts!", (0,0,0,0)],
-    ["Der Bundeskanzler ist in einen Finanzskandal verwickelt!\n Es passiert nichts!", (0,0,0,0)],
+    #["Der Bundeskanzler ist in einen Finanzskandal verwickelt!\n Es passiert nichts!", (0,0,0,0)],
     ["Der Studiengang wird reakkreditiert.\n Es passiert nichts!", (0,0,0,0)],
     ["Die Vorlesungen werden evaluiert.\n Es passiert nichts!", (0,0,0,0)],
     ["Der StuRa veröffentlich eine Pressemitteilung gegen Diskriminierung.\n Es passiert nichts!", (0,0,0,0)],
@@ -39,10 +39,23 @@ event_list = [
     ["Beim Golfen lernst Du Gerhard Schröder kennen.\n Eine Vodka-Option!", (0,0,0,0)],
     ["Du erhältst brisante Nachrichten über den mexikanischen Agrar-Minister.\n Um Dich zum Schweigen zu bringen, erhältst Du eine Tequila-Option!", (0,0,0,0)],
     ["Du findest auf dem Dachboden Deinen alten Bitcoin-Usb-Stick.\n Du erhältst 2 Optionen Deiner Wahl!", (0,0,0,0)],
-    ["Julius trinkt nen Shot. \n Sorry, Julius!", (0,0,0,0)],
+
+    ["Also schön! \n Julius trinkt nen Shot!", (0,0,0,0)],
+    ["Prostest mir zu, Ihr Maden!\n Dun trinkt nen Shot.", (0, 0, 0, 0)],
+
     ["Julius muss einen Sombrero aufziehen!", (0,0,0,0)],
     ["Julius darf ggf. einen Sombrero ausziehen!", (0,0,0,0)]
 ]
+
+shout_outs = [
+    "Bringt mir **! \n ** bitte an die Shotbar!",
+    "Der/Die kleine **! \n ** bitte an die Shotbar!",
+    "Der Präsident verlangt nach **! \n Es geht um eine Angelegenheit nationaler Sicherheit!",
+    "** angetreten zum Appell an die Shotbar!",
+    "**! \n Beweg Deinen Arsch hier her!",
+    "Ich fänd's voll schön, wenn ** da wäre... \n kann jemand ** an die Shotbar bringen?"
+]
+
 
 def buyable_events():
     # TODO DB: Ein paar Kaufbare Events ausdenken
@@ -66,6 +79,13 @@ def one_event(idx=None):
     if idx is None:
         idx = random.randint(0, len(event_list))
     return event_list[idx]
+
+def get_shoutouts():
+    """Returns a randomized list of shoutouts."""
+    shoutout_permutation = list(np.random.permutation(len(shout_outs)))
+    randomized_shoutout_list = [shout_outs[idx] for idx in shoutout_permutation]
+    return randomized_shoutout_list
+
 
 def get_events():
     """Returns a randomized list of events."""

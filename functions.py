@@ -19,3 +19,8 @@ def praise_shots(idx, shot_names, price):
     engine = _TTS()
     engine.start(shout_out)
     del (engine)
+
+def shoutout(text):
+    engine = _TTS()
+    engine.start(text)
+    del (engine)

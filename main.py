@@ -2,6 +2,7 @@
 ## general
 import glob
 import json
+import random
 import time
 from datetime import datetime
 
@@ -53,10 +54,10 @@ update_time = 1
 step_noise = .7
 
 # Time, after which a stock event occurs (in seconds)
-event_time = 5
+event_time = 150
 output_window_show_time = 6
 # Events occure every event_time +- event_time_variance(in seconds)
-event_time_variance = 2
+event_time_variance = 30
 
 # Time, after which we save the y_data (in minutes)
 logging_minutes = 5
@@ -153,6 +154,7 @@ class MyMainWindow(QMainWindow):
         self.timer_logging.start()
 
         self.all_events = random_events.get_events()
+        self.all_shoutouts = random_events.get_shoutouts()
         self.event_idx = 0
         self.n_events = len(self.all_events)
 
@@ -311,12 +313,23 @@ class MyMainWindow(QMainWindow):
             self.reset()
         elif self.shots_bought_string == "event":
             self.stock_event()
+
+        elif self.shots_bought_string[0].isupper():
+            event_idx = random.randint(0, len(self.all_shoutouts)-1)
+            shoutout = self.all_shoutouts[event_idx].replace("**", self.shots_bought_string)
+            self.output_label.setText(shoutout)
+            self.output_label.adjustSize()
+            # self.output_window.setStyleSheet("border: 2px solid red; background: black")
+
+            self.output_window.show()
+
         elif len(self.shots_bought_string) == self.n_shots:
             self.update_shots_bought()
             self.print_price()
             self.update_price()
             self.update_plot_data()
             self.set_prices()
+
         else:
             self.ui.pay.setText("Schu bsuffe? \nGib die richtige Anzahl an Shots ein!")
 
