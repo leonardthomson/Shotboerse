@@ -112,8 +112,10 @@ class MyMainWindow(QMainWindow):
 
         QMainWindow.__init__(self)
         self.setWindowFlag(Qt.FramelessWindowHint)
-        self.setAttribute(Qt.WA_TranslucentBackground)
-        self.setContentsMargins(0, 0, 0, 0)
+        #self.setAttribute(Qt.WA_TranslucentBackground)
+        #self.setContentsMargins(15, 15, 15, 15)
+        self.setContentsMargins(0, 0,0,0)
+
         self.setWindowState(Qt.WindowMaximized)
 
 
