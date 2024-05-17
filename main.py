@@ -25,7 +25,7 @@ from myWidget import Ui_MainWindow
 from initWindow import Ui_Dialog
 
 import random_events
-from ctypes import windll
+# from ctypes import windll
 
 # TODO DB: Maybe count, how often every shot was bought
 
