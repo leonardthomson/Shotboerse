@@ -25,6 +25,7 @@ from myWidget import Ui_MainWindow
 from initWindow import Ui_Dialog
 
 import random_events
+
 # from ctypes import windll
 
 # TODO DB: Maybe count, how often every shot was bought
@@ -73,8 +74,6 @@ min_price = 70
 
 # From this point on we consider the shot to be cheap # CURRENTLY NOT USED
 is_cheap_value = min_price
-
-is_already_cheap = [0 for i in range(len(shot_dic))]
 n_cheap_before_praise_again = 5
 
 n_x_values = 1500
@@ -106,37 +105,35 @@ class MyMainWindow(QMainWindow):
     Implementing the functionality for the stock development.
     """
 
-
-
     def __init__(self, parent=None):
 
         QMainWindow.__init__(self)
         self.setWindowFlag(Qt.FramelessWindowHint)
-        #self.setAttribute(Qt.WA_TranslucentBackground)
-        #self.setContentsMargins(15, 15, 15, 15)
-        self.setContentsMargins(0, 0,0,0)
+        # self.setAttribute(Qt.WA_TranslucentBackground)
+        # self.setContentsMargins(15, 15, 15, 15)
+        self.setContentsMargins(0, 0, 0, 0)
 
         self.setWindowState(Qt.WindowMaximized)
-
-
 
         self.log_bool = False
         self.n_shots = None
         self.shot_names = []
         self.shot_dic = dict()
         self.count_dic = dict()
+
         self.shots_bought_string = " "
         self.ui = Ui_MainWindow()
-        # TODO: Fix the number of shots!
-        self.all_shots_bought = np.zeros((4, 2))
 
         self.init_dialog()
         self.ui.setupUi(self)
         self.show()
-        self.set_up_graph()
+
+        self.all_shots_bought = np.zeros((self.n_shots,
+                                          2))  # changed 4 to n_shots and moved down, now we can have less than 4 shots, more than 4 still doesn't work
 
         # Flag, whether the shot was already announced as being cheap
-        self.is_already_cheap = [0 for _ in range(self.n_shots)]
+        self.is_already_cheap = [0 for _ in range(self.n_shots)] # moved up to before set_up_graph
+        self.set_up_graph()
 
         # TIMERS
         self.timer_seconds = pg.QtCore.QTimer()
@@ -179,9 +176,6 @@ class MyMainWindow(QMainWindow):
         # self.output_window.set_title("EVENT OCCURED!")
 
         self.ui.lineEdit.returnPressed.connect(self.use_le_input)
-
-
-
 
     def init_dialog(self):
         d = QDialog()
@@ -317,7 +311,7 @@ class MyMainWindow(QMainWindow):
             self.stock_event()
 
         elif self.shots_bought_string[0].isupper():
-            event_idx = random.randint(0, len(self.all_shoutouts)-1)
+            event_idx = random.randint(0, len(self.all_shoutouts) - 1)
             shoutout = self.all_shoutouts[event_idx].replace("**", self.shots_bought_string)
             self.output_label.setText(shoutout)
             self.output_label.adjustSize()
@@ -369,12 +363,12 @@ class MyMainWindow(QMainWindow):
                                     for shot_name, price in zip(self.shot_names, self.price)])
         for idx in range(self.n_shots):
             if self.price[idx] < is_cheap_value:
-                if is_already_cheap[idx] >= n_cheap_before_praise_again:
+                if self.is_already_cheap[idx] >= n_cheap_before_praise_again:
                     functions.praise_shots(idx, shot_names=self.shot_names, price=self.price)
                 else:
-                    is_already_cheap[idx] += 1
+                    self.is_already_cheap[idx] += 1
             else:
-                is_already_cheap[idx] = 0
+                self.is_already_cheap[idx] = 0
 
     def update_plot_data(self):
         """
@@ -411,7 +405,7 @@ class MyMainWindow(QMainWindow):
         self.price = [max(self.price[idx] + noise * (np.random.rand() - 0.5), min_price) for idx in range(self.n_shots)]
         self.update_plot_data()
         self.set_prices()
-        #self.print_price()
+        # self.print_price()
 
     def stock_event(self):
         """
@@ -428,13 +422,12 @@ class MyMainWindow(QMainWindow):
 
         self.output_label.setText(event_text)
         self.output_label.adjustSize()
-        #self.output_window.setStyleSheet("border: 2px solid red; background: black")
+        # self.output_window.setStyleSheet("border: 2px solid red; background: black")
 
         self.output_window.update()
         self.output_window.show()
 
-
-        pg.QtCore.QTimer.singleShot(output_window_show_time*1000, self.output_window.close)
+        pg.QtCore.QTimer.singleShot(output_window_show_time * 1000, self.output_window.close)
 
         # Update event_idx
         self.event_idx += 1
